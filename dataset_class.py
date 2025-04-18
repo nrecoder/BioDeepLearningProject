@@ -190,7 +190,6 @@ class SleepChunkDataset(Dataset):
         #self.x_values = x_values
         self.chunks = []  # List to store each generated chunk (with its corresponding data, labels, and SID)
         # Effective sampling rate after downsampling becomes downsample_freq Hz.
-        
 
         for SID in subjects_list:
             file_path = os.path.join(data_dir, f"{SID}_whole_df.csv")
@@ -199,9 +198,9 @@ class SleepChunkDataset(Dataset):
                 if debug:
                     print(f"Loaded data for subject {SID}")
 
-                acc_chunk_data = self.getxdata('acc',chunk_duration, chunk_stride,df,max_length, SID, timestamp)
+                acc_chunk_data = self.getxdata('acc',chunk_duration, chunk_stride,df, SID, timestamp)
                 # acc_chunk_data = forward_fill(torch.tensor(acc_chunk_data, dtype=torch.float32))
-                tempbvp_chunk_data, chunk_labels, SIDs = self.getxdata('TEMPBVP',chunk_duration, chunk_stride,df,max_length, SID, timestamp)
+                tempbvp_chunk_data, chunk_labels, SIDs = self.getxdata('TEMPBVP',chunk_duration, chunk_stride,df, SID, timestamp)
                 # tempbvp_chunk_data = forward_fill(torch.tensor(tempbvp_chunk_data, dtype=torch.float32))
                 # chunk_labels = forward_fill(torch.tensor(chunk_labels,dtype = torch.long))
                 # print(acc_chunk_data.shape)
@@ -216,7 +215,7 @@ class SleepChunkDataset(Dataset):
                         })
             else:
                 print(f"File {file_path} does not exist. Skipping subject {SID}")
-    def getxdata(self, x_values, chunk_duration, chunk_stride, df, max_length, SID, timestamp = timestamp, debug = False):
+    def getxdata(self, x_values, chunk_duration, chunk_stride, df, SID, timestamp, debug = False):
         if x_values == 'acc':
             downsample_freq=32
             cols = ['ACC_X', 'ACC_Y', 'ACC_Z']
@@ -286,7 +285,7 @@ class SleepChunkDataset(Dataset):
             # })
             chunk_data_list.append(forward_fill(chunk_data))
             if x_values == 'TEMPBVP':
-                chunk_labels_list.append(forward_fill(chunk_labels))
+                chunk_labels_list.append(chunk_labels)
                 SIDS_list.append(SID)
         if debug:
             num_chunks = (T - chunk_length) // self.stride + 1
