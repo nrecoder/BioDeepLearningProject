@@ -59,6 +59,7 @@ class SleepDataset(Dataset):
     def __init__(self, subjects_list, data_dir, timestamp = False, max_length=2493810,debug=False):
         """ x_values = 'acc' or 'TEMPBVP'"""
         self.subjects = [{} for _ in range(len(subjects_list))]
+        self.timestamp = timestamp
         #self.x_values = x_values
 
         for subjectNo, SID in enumerate(subjects_list):
@@ -83,7 +84,7 @@ class SleepDataset(Dataset):
                 tempbvp_data = self.getxdata('TEMPBVP', df, subjectNo, max_length)
             else:
                 warning(f"File {file_path} does not exist. Skipping subject {SID}.")
-    def getxdata(self, x_values, df, subjectNo, max_length):
+    def getxdata(self, x_values, df, subjectNo, timestamp,max_length):
         if x_values == 'acc':
             downsample_freq=32
             cols = ['ACC_X', 'ACC_Y', 'ACC_Z']
@@ -128,7 +129,7 @@ class SleepDataset(Dataset):
             padding_length = max_length - len(df_X)
             padding = pd.DataFrame(np.nan, index=np.arange(padding_length), columns=df_X.columns)
             df_X = pd.concat([df_X, padding], ignore_index=True)
-            if timestamp == False:
+            if self.timestamp == False:
                 df_X = df_X.drop('TIMESTAMP', axis = 1)
             if x_values == 'TEMPBVP':
                 df_Y = pd.concat([df_Y, pd.Series([-1] * padding_length)], ignore_index=True)
