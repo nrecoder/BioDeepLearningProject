@@ -80,8 +80,8 @@ class SleepDataset(Dataset):
                     'labels': None,                 # shape: [T]
                     'SID': SID
                 }
-                acc_data = self.getxdata('acc', df, subjectNo, max_length)
-                tempbvp_data = self.getxdata('TEMPBVP', df, subjectNo, max_length)
+                acc_data = self.getxdata('acc', df, subjectNo, timestamp=False, max_length= max_length)
+                tempbvp_data = self.getxdata('TEMPBVP', df, subjectNo, timestamp, max_length)
             else:
                 warning(f"File {file_path} does not exist. Skipping subject {SID}.")
     def getxdata(self, x_values, df, subjectNo, timestamp,max_length):
@@ -120,8 +120,8 @@ class SleepDataset(Dataset):
         
         # Pad/truncate the data to the downsampled max_length
         if len(df_X) > max_length:
-            # if debug:
-            #     print(f"Truncating data for {SID} from {len(df_X)} to {max_length} samples.")
+            if debug:
+                print(f"Truncating data for {subjectNo} from {len(df_X)} to {max_length} samples.")
             df_X = df_X.iloc[:max_length]
             if x_values == 'TEMPBVP':
                 df_Y = df_Y.iloc[:max_length]
@@ -129,7 +129,7 @@ class SleepDataset(Dataset):
             padding_length = max_length - len(df_X)
             padding = pd.DataFrame(np.nan, index=np.arange(padding_length), columns=df_X.columns)
             df_X = pd.concat([df_X, padding], ignore_index=True)
-            if self.timestamp == False:
+            if self.timestamp == False or x_values == 'acc':
                 df_X = df_X.drop('TIMESTAMP', axis = 1)
             if x_values == 'TEMPBVP':
                 df_Y = pd.concat([df_Y, pd.Series([-1] * padding_length)], ignore_index=True)
@@ -207,7 +207,7 @@ class SleepChunkDataset(Dataset):
                 # print(acc_chunk_data.shape)
                 # print(tempbvp_chunk_data.shape)
                 # print(chunk_labels.shape)
-                for acc, tempbvp, labels, SIDS in zip(acc_chunk_data,tempbvp_chunk_data, chunk_labels, SIDs):
+                for acc, tempbvp, labels, SID in zip(acc_chunk_data,tempbvp_chunk_data, chunk_labels, SIDs):
                     chunk_data = {'acc_data': acc, 'tempbvp_data': tempbvp}
                     self.chunks.append({
                             'data': chunk_data,
@@ -253,7 +253,8 @@ class SleepChunkDataset(Dataset):
             df['Sleep_Stage'] = df['Sleep_Stage'].astype(str).str.strip()
             df_Y = df['Sleep_Stage'].map(SLEEP_STAGE_MAPPING)
             labels_arr = df_Y.to_numpy()                # shape: [T]
-        if timestamp == False:
+        #only leave teh timestamp on tempbvp
+        if timestamp == False or x_values == 'acc':
             df_X = df_X.drop('TIMESTAMP', axis = 1)
         
         # Convert features and labels to numpy arrays
